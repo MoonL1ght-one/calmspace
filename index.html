@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="background:#0a0e13">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>平静 · 停留一会儿</title>
+<style>html,body{background:#0a0e13;}</style>
+<style>
+  :root{
+    --text:#ece9e4;
+    --dim:#a3aeb9;
+    --faint:#6e7986;
+    --sand:#dcc09a;
+    --mist:#94bccc;
+    --serif:"KaiTi","STKaiti","KaiTi_GB2312","Songti SC","SimSun",Georgia,serif;
+    --sans:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:#0a0e13;
+    color:var(--text);
+    font-family:var(--sans);
+    overflow:hidden;
+    position:fixed;inset:0;
+    cursor:default;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  /* 背景 */
+  .bg{position:fixed;inset:0;z-index:0;
+    background:
+      radial-gradient(78% 62% at 50% 20%, rgba(45,68,86,.60) 0%, rgba(28,43,56,.42) 34%, rgba(16,23,31,.16) 64%, rgba(11,16,22,0) 100%),
+      radial-gradient(95% 75% at 10% 98%, rgba(96,68,40,.20) 0%, rgba(60,42,26,.10) 42%, transparent 72%),
+      radial-gradient(85% 65% at 94% 6%, rgba(58,94,112,.20) 0%, rgba(34,56,70,.10) 44%, transparent 74%),
+      linear-gradient(180deg,#121c26 0%,#0d141b 46%,#0a0f15 100%);
+  }
+  #dust{position:fixed;inset:0;z-index:1;display:block;}
+  .vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+    background:radial-gradient(120% 92% at 50% 46%, transparent 46%, rgba(4,7,10,.38) 84%, rgba(3,5,8,.62) 100%);}
+  .grain{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.045;
+    background-image:radial-gradient(#fff 1px, transparent 0);background-size:3px 3px;}
+
+  /* 布局 */
+  .stage{position:fixed;inset:0;z-index:3;display:flex;flex-direction:column;
+    align-items:center;justify-content:space-between;padding:34px 40px 30px;
+    opacity:0;transition:opacity 2.6s ease, filter 1.2s ease;}
+  .stage.in{opacity:1;}
+
+  /* 顶栏 */
+  .top{width:100%;display:flex;align-items:center;justify-content:space-between;
+    font-size:12.5px;letter-spacing:.16em;color:var(--faint);
+    opacity:0;transition:opacity 2.4s ease 1.2s;}
+  .top.in{opacity:1;}
+  .top .mark{display:flex;align-items:center;gap:10px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--sand);opacity:.7;
+    animation:pulse 7.6s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:.85;transform:scale(1.15)}}
+  .tools{display:flex;gap:22px;align-items:center;}
+  .tbtn{background:none;border:0;color:#85909c;font-family:var(--sans);
+    font-size:12.5px;letter-spacing:.14em;cursor:pointer;padding:6px 2px;
+    transition:color .5s ease;border-bottom:1px solid transparent;}
+  .tbtn:hover{color:var(--text);}
+  .tbtn.on{color:var(--sand);border-bottom-color:rgba(220,192,154,.4);}
+
+  /* 呼吸圆 */
+  .orb{position:relative;width:min(44vh,460px);aspect-ratio:1/1;
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+    opacity:0;transition:opacity 3s ease .6s;}
+  .orb.in{opacity:1;}
+  .orb svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);}
+  .ringTrack{fill:none;stroke:rgba(255,255,255,.075);stroke-width:1.2;}
+  .ringHi{fill:none;stroke:rgba(255,255,255,.13);stroke-width:1;stroke-dasharray:1 9;stroke-linecap:round;}
+  .ringProg{fill:none;stroke:var(--sand);stroke-width:1.8;stroke-linecap:round;
+    opacity:.7;transition:stroke .9s ease;}
+  .halo{position:absolute;width:74%;height:74%;border-radius:50%;
+    background:radial-gradient(circle, rgba(220,192,154,.24) 0%, rgba(148,188,204,.12) 46%, rgba(255,255,255,0) 72%);
+    filter:blur(6px);will-change:transform,opacity;}
+  .core{position:absolute;width:46%;height:46%;border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, rgba(236,233,228,.20) 0%, rgba(220,192,154,.12) 52%, rgba(220,192,154,0) 74%);
+    border:1px solid rgba(236,233,228,.15);
+    box-shadow:0 0 70px rgba(220,192,154,.14), inset 0 0 44px rgba(236,233,228,.07);
+    will-change:transform;}
+  .breathText{position:relative;text-align:center;line-height:1;}
+  .phase{font-size:16px;letter-spacing:.5em;color:var(--dim);text-indent:.5em;
+    transition:color .9s ease, opacity .6s ease;}
+  .secs{margin-top:12px;font-size:12.5px;letter-spacing:.3em;color:var(--faint);
+    font-variant-numeric:tabular-nums;}
+
+  /* 中间：文字 */
+  .middle{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:min(5vh,46px);width:100%;}
+  .quoteBox{max-width:min(74ch,78vw);min-height:6em;display:flex;
+    align-items:center;justify-content:center;text-align:center;padding:0 12px;}
+  .quote{font-family:var(--serif);font-size:clamp(20px,2.3vw,30px);line-height:2;
+    letter-spacing:.09em;color:#e6e1d9;
+    transition:opacity 1.4s ease, filter 1.4s ease, transform 1.4s ease;
+    text-shadow:0 0 30px rgba(0,0,0,.5);}
+  .quote.out{opacity:0;filter:blur(7px);transform:translateY(-8px);}
+  .quote .tag{display:block;font-family:var(--sans);font-size:12px;letter-spacing:.34em;
+    color:var(--sand);opacity:.8;margin-bottom:20px;}
+  .quote.ask{color:#f0e9dc;}
+
+  /* 底部 */
+  .bottom{width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;
+    opacity:0;transition:opacity 2.6s ease 2.2s;}
+  .bottom.in{opacity:1;}
+  .hint{font-size:12.5px;letter-spacing:.28em;color:var(--faint);text-indent:.28em;}
+  .fieldWrap{position:relative;width:min(360px,62vw);}
+  #exitInput{width:100%;background:transparent;border:0;
+    border-bottom:1px solid rgba(236,233,228,.2);
+    padding:12px 6px;text-align:center;color:var(--text);
+    font-family:var(--serif);font-size:22px;letter-spacing:.42em;text-indent:.42em;
+    outline:none;transition:border-color .8s ease, box-shadow .8s ease;
+    -webkit-user-select:text;user-select:text;}
+  #exitInput::placeholder{color:rgba(126,137,150,.85);font-size:14px;letter-spacing:.22em;text-indent:.22em;}
+  #exitInput:focus{border-bottom-color:rgba(220,192,154,.6);box-shadow:0 14px 26px -18px rgba(220,192,154,.6);}
+  .fieldWrap::after{content:"";position:absolute;left:50%;bottom:0;height:1px;width:0;
+    background:var(--sand);transform:translateX(-50%);transition:width .9s cubic-bezier(.22,.61,.36,1);}
+  .fieldWrap:focus-within::after{width:100%;}
+  .meta{font-size:12px;letter-spacing:.2em;color:#5c6672;font-variant-numeric:tabular-nums;}
+
+  /* 提示条 */
+  .toast{position:fixed;top:8vh;left:50%;transform:translate(-50%,-14px);z-index:6;
+    max-width:min(62ch,74vw);text-align:center;font-family:var(--serif);
+    font-size:16px;line-height:1.9;letter-spacing:.09em;color:#cfc9c1;
+    background:rgba(12,17,23,.72);border:1px solid rgba(220,192,154,.16);
+    border-radius:2px;padding:14px 24px;backdrop-filter:blur(8px);
+    opacity:0;pointer-events:none;transition:opacity 1.6s ease, transform 1.6s ease;}
+  .toast.in{opacity:1;transform:translate(-50%,0);}
+
+  /* 写下此刻 */
+  .writeLayer{position:fixed;inset:0;z-index:8;display:none;
+    align-items:center;justify-content:center;flex-direction:column;gap:26px;
+    background:rgba(7,10,14,.86);backdrop-filter:blur(10px);padding:8vh 8vw;}
+  .writeLayer.in{display:flex;}
+  .writeHead{font-family:var(--serif);font-size:clamp(19px,2vw,26px);letter-spacing:.14em;color:#d9d3cb;}
+  .writeSub{font-size:12px;letter-spacing:.24em;color:var(--faint);margin-top:-14px;}
+  #writeArea{width:min(820px,84vw);height:34vh;background:transparent;border:1px solid rgba(233,230,225,.10);
+    border-radius:3px;padding:22px 24px;color:#e4dfd8;font-family:var(--serif);
+    font-size:19px;line-height:2;letter-spacing:.06em;outline:none;resize:none;
+    -webkit-user-select:text;user-select:text;transition:opacity 1.6s ease, filter 1.6s ease, transform 1.6s ease, border-color .6s;}
+  #writeArea:focus{border-color:rgba(220,192,154,.35);}
+  #writeArea.away{opacity:0;filter:blur(12px);transform:translateY(-26px) scale(.99);}
+  .writeBtns{display:flex;gap:34px;align-items:center;}
+  .wbtn{background:none;border:0;font-family:var(--sans);font-size:13px;letter-spacing:.22em;
+    color:var(--faint);cursor:pointer;padding:8px 4px;transition:color .5s;}
+  .wbtn:hover{color:var(--dim);}
+  .wbtn.main{color:var(--sand);opacity:.85;}
+  .wbtn.main:hover{opacity:1;}
+  .writeDone{font-family:var(--serif);font-size:clamp(19px,2vw,26px);letter-spacing:.14em;
+    color:var(--sand);opacity:0;transition:opacity 1.6s ease;}
+
+  /* 告别 */
+  .farewell{position:fixed;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;opacity:0;transition:opacity 1.8s ease;background:transparent;}
+  .farewell.in{opacity:1;background:rgba(6,9,12,.55);}
+  .fLine{position:absolute;font-family:var(--serif);font-size:clamp(22px,2.4vw,34px);
+    letter-spacing:.22em;color:#e2ddd5;opacity:0;transition:opacity 1.4s ease, filter 1.4s ease;filter:blur(4px);}
+  .fLine.in{opacity:1;filter:blur(0);}
+  .blackout{position:fixed;inset:0;z-index:10;background:#05080b;opacity:0;
+    transition:opacity 1.8s ease;pointer-events:none;}
+  .blackout.in{opacity:1;}
+  .exitNote{position:fixed;bottom:6vh;left:50%;transform:translateX(-50%);z-index:11;
+    font-size:12.5px;letter-spacing:.2em;color:#4b5560;opacity:0;transition:opacity 1.2s ease;}
+  .exitNote.in{opacity:1;}
+
+  @media (max-width:820px){
+    .stage{padding:22px 20px;}
+    .quoteBox{max-width:92vw;}
+  }
+  @media (max-height:800px){
+    .stage{padding:22px 34px 18px;}
+    .orb{width:min(32vh,320px);}
+    .middle{gap:min(3vh,24px);}
+    .quote{font-size:clamp(17px,1.9vw,24px);line-height:1.9;}
+    .quoteBox{min-height:4.6em;}
+    #exitInput{font-size:19px;padding:9px 6px;}
+  }
+  @media (max-height:620px){
+    .orb{width:min(26vh,260px);}
+    .quote{font-size:17px;}
+    .quoteBox{min-height:3.6em;}
+    .top,.meta{font-size:11px;}
+  }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <canvas id="dust"></canvas>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+
+  <div class="stage" id="stage">
+    <header class="top" id="top">
+      <div class="mark"><span class="dot"></span><span>此刻，只有你和你的呼吸</span></div>
+      <div class="tools">
+        <button class="tbtn" id="soundBtn" type="button">静音环境声</button>
+        <button class="tbtn" id="writeBtn" type="button">把此刻想说的写下来</button>
+      </div>
+    </header>
+
+    <div class="middle">
+      <div class="orb" id="orb">
+        <svg viewBox="0 0 400 400" aria-hidden="true">
+          <circle class="ringTrack" cx="200" cy="200" r="190"></circle>
+          <circle class="ringHi" cx="200" cy="200" r="190"></circle>
+          <circle class="ringProg" id="ringProg" cx="200" cy="200" r="190"></circle>
+        </svg>
+        <div class="halo" id="halo"></div>
+        <div class="core" id="core"></div>
+        <div class="breathText">
+          <div class="phase" id="phaseText">吸气</div>
+          <div class="secs" id="phaseSecs">4</div>
+        </div>
+      </div>
+
+      <div class="quoteBox">
+        <p class="quote" id="quote"></p>
+      </div>
+    </div>
+
+    <footer class="bottom" id="bottom">
+      <div class="hint">当你真的准备好了 —— 写下「离开」</div>
+      <div class="fieldWrap">
+        <input id="exitInput" type="text" autocomplete="off" spellcheck="false"
+               placeholder="在此输入" aria-label="输入离开以退出" />
+      </div>
+      <div class="meta">你已经在这里停留了 <span id="dwell">00:00</span> &nbsp;·&nbsp; 输入后按回车</div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="writeLayer" id="writeLayer">
+    <div class="writeHead">把它放在这里</div>
+    <div class="writeSub">不会保存到任何地方，写完就散了</div>
+    <textarea id="writeArea" spellcheck="false" placeholder="想骂的、想说的、想砸的，都可以写在这里……"></textarea>
+    <div class="writeBtns" id="writeBtns">
+      <button class="wbtn main" id="letGo" type="button">让它走</button>
+      <button class="wbtn" id="keepIt" type="button">先留着</button>
+    </div>
+    <div class="writeDone" id="writeDone">它已经被你看见了。</div>
+  </div>
+
+  <div class="farewell" id="farewell">
+    <div class="fLine" id="f1">好。</div>
+    <div class="fLine" id="f2">慢慢来。</div>
+    <div class="fLine" id="f3">需要的时候，再来。</div>
+  </div>
+  <div class="blackout" id="blackout"></div>
+  <div class="exitNote" id="exitNote">窗口没有自动关闭的话，按 Alt + F4 就能回到桌面</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ 1. 呼吸引导 4-7-8 ============ */
+  var PHASES = [
+    { label:"吸气", dur:4000, color:"#dcc09a" },
+    { label:"保持", dur:7000, color:"#c6c0b7" },
+    { label:"呼气", dur:8000, color:"#94bccc" }
+  ];
+  var CYCLE = PHASES.reduce(function(a,p){ return a + p.dur; }, 0);
+  var R = 190, CIRC = 2 * Math.PI * R;
+  var ringProg = document.getElementById("ringProg");
+  var core = document.getElementById("core");
+  var halo = document.getElementById("halo");
+  var phaseText = document.getElementById("phaseText");
+  var phaseSecs = document.getElementById("phaseSecs");
+  ringProg.style.strokeDasharray = CIRC.toFixed(2);
+
+  var SCALE_MIN = 0.68, SCALE_MAX = 1.0;
+  var breathLevel = 0.5;
+  function easeInOut(t){ return t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2)/2; }
+  function scaleFor(key, p){
+    if(key === 0) return SCALE_MIN + (SCALE_MAX - SCALE_MIN) * easeInOut(p);
+    if(key === 1) return SCALE_MAX - 0.02 * easeInOut(p);
+    return SCALE_MAX - (SCALE_MAX - SCALE_MIN) * easeInOut(p);
+  }
+
+  var t0 = performance.now();
+  var lastPhase = -1;
+
+  function tickBreath(now){
+    var e = (now - t0) % CYCLE;
+    var acc = 0, idx = 0, local = 0;
+    for(var i = 0; i < PHASES.length; i++){
+      if(e < acc + PHASES[i].dur){ idx = i; local = (e - acc) / PHASES[i].dur; break; }
+      acc += PHASES[i].dur;
+    }
+    var s = scaleFor(idx, local);
+    breathLevel = (s - SCALE_MIN) / (SCALE_MAX - SCALE_MIN);
+
+    core.style.transform = "scale(" + s.toFixed(4) + ")";
+    halo.style.transform = "scale(" + (s * 1.02).toFixed(4) + ")";
+    halo.style.opacity = (0.55 + 0.45 * breathLevel).toFixed(3);
+    ringProg.style.strokeDashoffset = (CIRC * (1 - local)).toFixed(2);
+    ringProg.style.stroke = PHASES[idx].color;
+
+    if(idx !== lastPhase){
+      lastPhase = idx;
+      phaseText.style.opacity = "0";
+      var idxNow = idx;
+      setTimeout(function(){
+        phaseText.textContent = PHASES[idxNow].label;
+        phaseText.style.color = PHASES[idxNow].color;
+        phaseText.style.opacity = "1";
+      }, 380);
+    }
+    phaseSecs.textContent = Math.max(1, Math.ceil((PHASES[idx].dur * (1 - local)) / 1000));
+  }
+
+  /* ============ 2. 浮尘 ============ */
+  var cv = document.getElementById("dust"), ctx = cv.getContext("2d");
+  var W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var dust = [];
+  function resize(){
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cv.style.width = W + "px"; cv.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    var n = Math.round(Math.min(110, Math.max(46, W * H / 26000)));
+    dust = [];
+    for(var i = 0; i < n; i++) dust.push(newDust(true));
+  }
+  function newDust(spread){
+    return {
+      x: Math.random() * W,
+      y: spread ? Math.random() * H : H + 20,
+      r: 0.5 + Math.random() * 1.9,
+      vy: -(0.06 + Math.random() * 0.22),
+      vx: (Math.random() - 0.5) * 0.11,
+      a: 0.03 + Math.random() * 0.11,
+      ph: Math.random() * Math.PI * 2,
+      warm: Math.random() < 0.45
+    };
+  }
+  var burst = [];
+  function drawDust(){
+    ctx.clearRect(0, 0, W, H);
+    for(var i = 0; i < dust.length; i++){
+      var d = dust[i];
+      d.x += d.vx; d.y += d.vy; d.ph += 0.006;
+      if(d.y < -12){ d.y = H + 10; d.x = Math.random() * W; }
+      if(d.x < -12) d.x = W + 10; if(d.x > W + 12) d.x = -10;
+      var al = d.a * (0.6 + 0.4 * Math.sin(d.ph));
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, 6.2832);
+      ctx.fillStyle = d.warm
+        ? "rgba(220,192,154," + al.toFixed(3) + ")"
+        : "rgba(200,214,224," + al.toFixed(3) + ")";
+      ctx.fill();
+    }
+    for(var j = burst.length - 1; j >= 0; j--){
+      var b = burst[j];
+      b.x += b.vx; b.y += b.vy; b.vy -= 0.005; b.life -= 0.008;
+      if(b.life <= 0){ burst.splice(j, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r * b.life, 0, 6.2832);
+      ctx.fillStyle = "rgba(220,192,154," + (b.life * 0.5).toFixed(3) + ")";
+      ctx.fill();
+    }
+  }
+  function scatter(cx, cy, count){
+    for(var i = 0; i < count; i++){
+      var ang = Math.random() * Math.PI * 2, sp = 0.4 + Math.random() * 2.4;
+      burst.push({ x: cx, y: cy, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 0.4,
+        r: 0.8 + Math.random() * 2.4, life: 1 });
+    }
+  }
+
+  /* ============ 3. 文字轮换 ============ */
+  var LINES = [
+    { t:"你现在的感受是真实的，但它不是你。<br>你是看着它经过的那个人。" },
+    { t:"风暴会过去。<br>你不是风暴，你是天空。" },
+    { t:"在刺激与回应之间，有一个空间。<br>你的自由在那个空间里。" },
+    { t:"先呼吸。<br>决定可以晚一点做，而且往往应该晚一点做。" },
+    { t:"愤怒常常是无力感穿上的盔甲。<br>看看盔甲下面，你在保护什么？" },
+    { t:"你不需要赢过这一刻。<br>你只需要穿过它。" },
+    { t:"水浑浊的时候，什么都看不见。<br>静下来，泥沙会自己沉下去。" },
+    { t:"你可以生气，同时什么也不做。<br>这两件事并不冲突。" },
+    { t:"不是所有情绪都需要被处理。<br>有些只需要被陪着。" },
+    { t:"呼气可以长一点。<br>长呼气是在告诉身体：安全了。" },
+    { t:"有些话现在说出去，<br>会变成你之后要花很久收拾的东西。" },
+    { t:"此刻，你身体里最紧的地方在哪里？", ask:true },
+    { t:"如果是三年后的你坐在这里，<br>他会怎么对你说？", ask:true },
+    { t:"你想要解决的，是问题本身，<br>还是想让对方也难受？", ask:true },
+    { t:"这件事，一年后还重要吗？", ask:true },
+    { t:"你现在想保护的是什么？<br>找出它，比发泄更有用。", ask:true },
+    { t:"你已经在这里待了一会儿了。<br>这本身就是一种力量。" }
+  ];
+  var qi = 0;
+  var quoteEl = document.getElementById("quote");
+  function showLine(i){
+    var L = LINES[i % LINES.length];
+    quoteEl.className = "quote out" + (L.ask ? " ask" : "");
+    setTimeout(function(){
+      quoteEl.innerHTML = (L.ask ? '<span class="tag">问自己</span>' : "") + L.t;
+      quoteEl.classList.remove("out");
+    }, 1450);
+  }
+
+  /* ============ 4. 环境声（布朗噪声，实时合成，无外部文件） ============ */
+  var actx = null, noiseGain = null, soundOn = false;
+  var soundBtn = document.getElementById("soundBtn");
+  function buildSound(){
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return false;
+    actx = new AC();
+    var len = actx.sampleRate * 3;
+    var buf = actx.createBuffer(1, len, actx.sampleRate);
+    var d = buf.getChannelData(0), last = 0;
+    for(var i = 0; i < len; i++){
+      var white = Math.random() * 2 - 1;
+      last = (last + 0.02 * white) / 1.02;
+      d[i] = last * 3.2;
+    }
+    var src = actx.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    var lp = actx.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.value = 420; lp.Q.value = 0.4;
+    noiseGain = actx.createGain();
+    noiseGain.gain.value = 0.0001;
+    src.connect(lp).connect(noiseGain).connect(actx.destination);
+    src.start(0);
+    return true;
+  }
+  soundBtn.addEventListener("click", function(){
+    if(!actx && !buildSound()) return;
+    if(actx.state === "suspended") actx.resume();
+    soundOn = !soundOn;
+    noiseGain.gain.setTargetAtTime(soundOn ? 0.055 : 0.0001, actx.currentTime, 0.7);
+    soundBtn.classList.toggle("on", soundOn);
+    soundBtn.textContent = soundOn ? "环境声 开" : "静音环境声";
+  });
+  var soundTick = 0;
+  function modulateSound(){
+    if(!soundOn || !noiseGain || !actx) return;
+    if(++soundTick % 10) return;
+    noiseGain.gain.setTargetAtTime(0.028 + 0.038 * breathLevel, actx.currentTime, 0.4);
+  }
+
+  /* ============ 5. 主循环 ============ */
+  function loop(now){
+    tickBreath(now);
+    drawDust();
+    modulateSound();
+    requestAnimationFrame(loop);
+  }
+
+  /* ============ 6. 停留计时 ============ */
+  var dwellEl = document.getElementById("dwell");
+  var startAt = Date.now();
+  function fmt(ms){
+    var s = Math.floor(ms / 1000);
+    var m = Math.floor(s / 60);
+    return (m < 10 ? "0" : "") + m + ":" + ((s % 60) < 10 ? "0" : "") + (s % 60);
+  }
+  setInterval(function(){ dwellEl.textContent = fmt(Date.now() - startAt); }, 1000);
+
+  /* ============ 7. 90 秒后的那句话 ============ */
+  var toast = document.getElementById("toast");
+  setTimeout(function(){
+    toast.textContent = "90 秒过去了。身体里那阵化学风暴，峰值通常已经过去。";
+    toast.classList.add("in");
+    setTimeout(function(){ toast.classList.remove("in"); }, 9000);
+  }, 90000);
+
+  /* ============ 8. 写下此刻 ============ */
+  var writeLayer = document.getElementById("writeLayer");
+  var writeArea = document.getElementById("writeArea");
+  var writeBtns = document.getElementById("writeBtns");
+  var writeDone = document.getElementById("writeDone");
+  var writeBtn = document.getElementById("writeBtn");
+  var exitInput = document.getElementById("exitInput");
+
+  writeBtn.addEventListener("click", function(){
+    writeLayer.classList.add("in");
+    setTimeout(function(){ writeArea.focus(); }, 60);
+  });
+  document.getElementById("keepIt").addEventListener("click", closeWrite);
+  function closeWrite(){
+    writeLayer.classList.remove("in");
+    writeArea.classList.remove("away");
+    writeArea.value = "";
+    writeBtns.style.display = "flex";
+    writeDone.style.opacity = "0";
+    setTimeout(function(){ exitInput.focus(); }, 100);
+  }
+  document.getElementById("letGo").addEventListener("click", function(){
+    if(!writeArea.value.trim()){ closeWrite(); return; }
+    writeArea.classList.add("away");
+    var r = writeArea.getBoundingClientRect();
+    scatter(r.left + r.width / 2, r.top + r.height / 2, 90);
+    writeBtns.style.display = "none";
+    setTimeout(function(){ writeDone.style.opacity = "1"; }, 500);
+    setTimeout(function(){ closeWrite(); }, 3200);
+  });
+
+  /* ============ 9. 退出：必须输入「离开」 ============ */
+  var KEYWORD = "离开";
+  var leaving = false;
+
+  exitInput.addEventListener("input", function(){
+    this.style.color = this.value.indexOf(KEYWORD) >= 0 ? "#dcc09a" : "#ece9e4";
+  });
+  exitInput.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+      e.preventDefault();
+      if(this.value.replace(/\s/g, "").indexOf(KEYWORD) >= 0) leave();
+      else{
+        this.style.borderBottomColor = "rgba(148,188,204,.55)";
+        var self = this;
+        setTimeout(function(){ self.style.borderBottomColor = ""; }, 700);
+      }
+    }
+  });
+
+  function leave(){
+    if(leaving) return;
+    leaving = true;
+    window.onbeforeunload = null;
+    try{ if(actx && soundOn) noiseGain.gain.setTargetAtTime(0.0001, actx.currentTime, 0.8); }catch(err){}
+
+    var stage = document.getElementById("stage");
+    stage.style.filter = "blur(9px)";
+    stage.style.opacity = "0";
+
+    var fw = document.getElementById("farewell");
+    fw.classList.add("in");
+    var f1 = document.getElementById("f1"), f2 = document.getElementById("f2"), f3 = document.getElementById("f3");
+    setTimeout(function(){ f1.classList.add("in"); }, 200);
+    setTimeout(function(){ f1.classList.remove("in"); }, 1200);
+    setTimeout(function(){ f2.classList.add("in"); }, 1400);
+    setTimeout(function(){ f2.classList.remove("in"); }, 2400);
+    setTimeout(function(){ f3.classList.add("in"); }, 2700);
+    setTimeout(function(){ document.getElementById("blackout").classList.add("in"); }, 3200);
+
+    setTimeout(shutdown, 4200);
+  }
+
+  function shutdown(){
+    var done = function(){};
+    var p;
+    try{ p = fetch("/__exit__", { cache:"no-store" }); }
+    catch(err){ p = null; }
+    var finish = function(){
+      try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(err){}
+      window.close();
+      setTimeout(function(){
+        document.getElementById("exitNote").classList.add("in");
+      }, 900);
+    };
+    if(p && p.then) p.then(done, done).then(finish);
+    else finish();
+  }
+
+  /* ============ 10. 全屏与防误退 ============ */
+  /* kiosk 模式由启动器负责真全屏，这里不再调用全屏 API，避免重复进入 */
+  var KIOSK = /[?&]kiosk=1/.test(location.search);
+  function requestFS(){
+    if(KIOSK) return;
+    var el = document.documentElement;
+    if(document.fullscreenElement || !el.requestFullscreen) return;
+    el.requestFullscreen({ navigationUI:"hide" }).catch(function(){});
+  }
+  window.addEventListener("load", requestFS);
+  window.addEventListener("pointerdown", requestFS);
+  window.addEventListener("keydown", requestFS, true);
+
+  document.addEventListener("keydown", function(e){
+    var k = (e.key || "").toLowerCase();
+    var blocked = (e.key === "Escape" || e.key === "F5" || e.key === "F11" || e.key === "F12" ||
+                   (e.ctrlKey && ["w","r","n","t","p","s","o","j","u","d","q","i"].indexOf(k) >= 0) ||
+                   (e.altKey && e.key === "ArrowLeft") || e.key === "Meta");
+    if(blocked){ e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  document.addEventListener("dragstart", function(e){ e.preventDefault(); });
+
+  /* 单击空白处把焦点交还输入框 */
+  document.addEventListener("pointerdown", function(e){
+    var t = e.target;
+    if(t && (t.tagName === "TEXTAREA" || t.tagName === "BUTTON" || t.tagName === "INPUT")) return;
+    if(writeLayer.classList.contains("in")) return;
+    setTimeout(function(){ exitInput.focus(); }, 0);
+  });
+
+  window.onbeforeunload = function(){ if(!leaving) return "还有一件事没做完。"; };
+
+  /* ============ 11. 入场 ============ */
+  resize();
+  window.addEventListener("resize", resize);
+  requestAnimationFrame(loop);
+
+  function arrive(){
+    document.getElementById("stage").classList.add("in");
+    setTimeout(function(){ document.getElementById("top").classList.add("in"); }, 400);
+    setTimeout(function(){ document.getElementById("orb").classList.add("in"); }, 1000);
+    setTimeout(function(){ document.getElementById("bottom").classList.add("in"); }, 2600);
+    setTimeout(function(){ exitInput.focus(); }, 2800);
+  }
+  /* 等第一帧画完再加类，保证淡入动画一定会被播放 */
+  requestAnimationFrame(function(){ requestAnimationFrame(arrive); });
+
+  setTimeout(function(){ showLine(qi); }, 5400);
+  setInterval(function(){ qi++; showLine(qi); }, 16000);
+})();
+</script>
+</body>
+</html>

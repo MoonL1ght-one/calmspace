@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+error.log
+_preview.html
+Thumbs.db
+Desktop.ini
