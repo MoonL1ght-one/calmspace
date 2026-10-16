@@ -1,67 +1,69 @@
 # CalmSpace
 
-**A fullscreen space for the moment right after you get furious** — or right before you say something you'd have to clean up for months.
+[English](README_EN.md) | 简体中文
 
-CalmSpace takes over your entire screen, breathes with you, and refuses to let you leave until you type a single word. That word is the speed bump between the impulse and the keyboard.
+**给「刚被点燃的那几十秒」准备的一块全屏空间** —— 也给自己一个机会，不去说那句之后要收拾好几个月的话。
+
+CalmSpace 会占据你整个屏幕，陪你呼吸，并且在你打出那个词之前不让你离开。那个词，就是冲动与键盘之间的一道减速带。
 
 ![CalmSpace](preview.png)
 
 ---
 
-## What it does
+## 它能做什么
 
-- **Takes the whole screen.** Borderless, no address bar, no tabs, nothing to click away.
-- **Breathes with you.** A 4-7-8 cycle (inhale 4s / hold 7s / exhale 8s) driven by a slowly expanding ring with a phase countdown. The long exhale is the part that actually tells your body it's safe.
-- **Gives you something to think about.** 17 lines that rotate every 16 seconds — observations, then questions aimed inward. *"Is the thing you want to solve the problem, or to make them hurt too?"*
-- **Waits out the chemistry.** At 90 seconds it says so out loud: the surge has usually crested by then. A concrete reason to stay one more minute.
-- **Lets you write it down, then let it go.** Anything you type there fades into drifting light and is gone. Nothing is saved, anywhere.
-- **Offers quiet.** Brown noise synthesized live in the browser — no audio files, and its volume swells and settles with your breath.
-- **Only one way out.** `Esc`, `F11`, `F5`, `Ctrl+W` and friends are blocked, right-click is disabled, and there are no buttons to close. You have to type the leave word in the input at the bottom.
+- **占满整个屏幕。** 无边框、没有地址栏、没有标签页，没有任何可以点掉的东西。
+- **陪你呼吸。** 4-7-8 节奏（吸气 4 秒 / 屏息 7 秒 / 呼气 8 秒），由一个缓慢胀缩的光环驱动，带相位倒计时。真正能让身体相信「已经安全了」的，是那段长长的呼气。
+- **给你一些值得想的东西。** 17 句话，每 16 秒换一句——先是观察，再是朝向自己的提问。*「你想解决的是问题本身，还是想让对方也难受？」*
+- **等身体里那阵化学风暴过去。** 到 90 秒时它会告诉你：峰值通常已经过去了。给「再多待一分钟」一个具体的理由。
+- **让你写下来，然后放开。** 你在那里打下的字会散成光尘消失，不保存到任何地方。
+- **提供一点安静。** 布朗噪声在浏览器里实时合成，没有音频文件，音量还会跟着你的呼吸起伏。
+- **只有一个出口。** `Esc`、`F11`、`F5`、`Ctrl+W` 等快捷键被拦截，右键被禁用，界面上没有任何关闭按钮。你必须在底部的输入框里打出那个离开的词。
 
-The interface is in Chinese; the leave word is `离开` (lí kāi). You only ever have to type it — never say it out loud.
+界面是中文的；那个词是 `离开`。你只需要把它打出来，不必读出声。
 
-## Quick start
+## 快速开始
 
-Double-click **`start.bat`**.
+双击 **`start.bat`**。
 
-Edge opens in kiosk mode at your screen's full resolution. Breathe. When you're done, type `离开` in the box at the bottom and press Enter — the screen fades out, the window closes itself, and you're back on your desktop.
+Edge 会以 kiosk 模式按你的屏幕分辨率全屏打开。呼吸。想结束时，在底部输入框里打出 `离开` 并回车——屏幕淡出，窗口自行关闭，你回到桌面。
 
-## Requirements
+## 环境要求
 
 - Windows 10 / 11
-- Python 3 (already installed on most machines; `start.bat` looks for it and tells you if it can't find it)
-- Microsoft Edge or Google Chrome
+- Python 3（多数机器上已有；`start.bat` 会自己去找，找不到会明确提示）
+- Microsoft Edge 或 Google Chrome
 
-## How it works
+## 工作原理
 
 ```
 start.bat
   └─ launcher.py
-       ├─ serves index.html from a tiny server bound to 127.0.0.1 only
-       ├─ launches Edge/Chrome with --kiosk --app=<url>?kiosk=1
-       │    (with a throwaway --user-data-dir, so it never touches your own browser session)
-       └─ waits. On exit it runs taskkill /F /T on the browser process,
-          shuts the server down, and deletes the throwaway profile.
+       ├─ 用一个只绑定 127.0.0.1 的迷你服务器托管 index.html
+       ├─ 以 --kiosk --app=<url>?kiosk=1 启动 Edge/Chrome
+       │    （使用一次性的 --user-data-dir，绝不触碰你自己的浏览器会话）
+       └─ 等待。退出时对浏览器进程执行 taskkill /F /T，
+          关闭服务器，并删除那个一次性配置目录。
 ```
 
-The page calls `/__exit__` only after you type the leave word; that request is what triggers the shutdown. The port is random, the server binds to localhost only, and it lives exactly as long as the window does.
+只有在你打出离开的词之后，页面才会请求 `/__exit__`；正是这个请求触发了收尾流程。端口是随机的，服务器只绑本机，存活时间与那个窗口完全一致。
 
-`index.html` also works standalone — open it directly and it asks for fullscreen itself (the exit falls back to `window.close()`).
+`index.html` 也能单独使用——直接打开，它会自己请求全屏（退出则退化为 `window.close()`）。
 
-## Honest limits
+## 诚实的边界
 
-- `Alt+F4` still closes the window. No web page can stop the OS, and pretending otherwise would be a lie. It's a speed bump and a room, not a jail.
-- If the very first launch ever shows an empty Edge window, close it and start again — a throwaway profile occasionally needs one warm-up. `error.log` appears in this folder if anything fails.
-- Not therapy and not medical advice. If this kind of anger is a regular visitor, or if anyone is at risk, it deserves real help, not a script.
+- **`Alt+F4` 仍然能关掉窗口。** 没有哪个网页拦得住操作系统，假装能就是撒谎。它是一道减速带和一间房，不是一座牢。
+- **第一次启动偶尔会看到一个空白 Edge 窗口**，关掉再启动一次即可——一次性配置目录有时需要一次预热。如果出错，这个目录下会出现 `error.log`。
+- **这不是治疗，也不是医疗建议。** 如果这样的愤怒是常客，或者有人正处于风险之中，那需要的是真正的帮助，而不是一个脚本。
 
-## Everything is local
+## 一切都在本机
 
-The page makes no external requests, no telemetry, no accounts. Nothing is written to disk — the only exception is an `error.log` in this folder if something crashes. Your typed words exist in browser memory and vanish when you let them go, or when the window closes.
+页面不发起任何外部请求，没有遥测，没有账号。不向磁盘写入任何东西——唯一的例外是崩溃时这个目录下的 `error.log`。你打下的字只存在于浏览器内存里，放开它、或关掉窗口，就消失了。
 
-## License
+## 许可证
 
-No license file yet — all rights reserved by default.
+暂未添加许可证文件——默认保留所有权利。
 
 ---
 
-*The name is the whole spec: a space that is calm.*
+*名字就是全部的设计说明：一个平静的空间。*
